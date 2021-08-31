@@ -14,6 +14,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
       title: 'Flutter Demo',
       theme: ThemeData(primarySwatch: Colors.blue),
       home: MyHomePage(),
@@ -72,7 +73,7 @@ class _MyHomePageState extends State<MyHomePage> {
                     NeumorphicText(
                       'Equalizer',
                       style: NeumorphicStyle(
-                        depth: 3,
+                        depth: 4,
                         color: Colors.white, //customize color here
                       ),
                       textStyle: NeumorphicTextStyle(
@@ -171,24 +172,57 @@ class _CustomEQState extends State<CustomEQ> {
           child: FutureBuilder<int>(
             future: Equalizer.getBandLevel(bandId),
             builder: (context, snapshot) {
-              return SliderTheme(
-                data: SliderThemeData(
-                    thumbColor: Colors.red,
-                    overlayColor: Colors.red,
-                    activeTrackColor: Colors.red,
-                    valueIndicatorColor: Colors.red,
-                    activeTickMarkColor: Colors.red),
-                child: FlutterSlider(
-                  disabled: !widget.enabled!,
-                  axis: Axis.vertical,
-                  rtl: true,
-                  min: min,
-                  max: max,
-                  values: [snapshot.hasData ? snapshot.data!.toDouble() : 0],
-                  onDragCompleted: (handlerIndex, lowerValue, upperValue) {
-                    Equalizer.setBandLevel(bandId, lowerValue.toInt());
-                  },
+              return FlutterSlider(
+                disabled: !widget.enabled!,
+                axis: Axis.vertical,
+                rtl: true,
+                min: min,
+                max: max,
+
+                handler: FlutterSliderHandler(
+                  decoration: BoxDecoration(),
+                  child: Material(
+                    type: MaterialType.circle,
+                    color: Color.fromARGB(255, 232, 232, 232),
+                    elevation: 3,
+                    child: Container(
+                      height: 20,
+                        width: 20,
+                        decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(width: 1, color: Colors.white54),
+                            color: Color.fromARGB(255, 232, 232, 232)
+                        ),
+                        padding: EdgeInsets.all(5),
+                        ),
+                  ),
                 ),
+                tooltip: FlutterSliderTooltip(
+                    textStyle: TextStyle(fontSize: 17, color: Colors.white),
+                    boxStyle: FlutterSliderTooltipBox(
+                        decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(4),
+                            border: Border.all(width: 1, color: Colors.white54),
+                            color: Colors.white54
+                        )
+                    )
+                ),
+                trackBar: FlutterSliderTrackBar(
+
+                  inactiveTrackBar: BoxDecoration(
+                    borderRadius: BorderRadius.circular(20),
+                    color: Colors.black12,
+                    border: Border.all(width: 3, color: Colors.blue),
+                  ),
+                  activeTrackBar: BoxDecoration(
+                      borderRadius: BorderRadius.circular(4),
+                      color: Colors.white54.withOpacity(0.5)
+                  ),
+                ),
+                values: [snapshot.hasData ? snapshot.data!.toDouble() : 0],
+                onDragCompleted: (handlerIndex, lowerValue, upperValue) {
+                  Equalizer.setBandLevel(bandId, lowerValue.toInt());
+                },
               );
             },
           ),
@@ -205,41 +239,53 @@ class _CustomEQState extends State<CustomEQ> {
   }
 
   Widget _buildPresets() {
-    return FutureBuilder<List<String>>(
-      future: fetchPresets,
-      builder: (context, snapshot) {
-        if (snapshot.hasData) {
-          final presets = snapshot.data;
-          if (presets!.isEmpty) return Text('No presets available!');
-          return Neumorphic(
-            child: DropdownButtonFormField(
-              decoration: InputDecoration(
-                labelText: 'Available Presets',
-                labelStyle: TextStyle(color: Colors.white),
-                border: OutlineInputBorder(),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 18.0,vertical: 10),
+      child: FutureBuilder<List<String>>(
+        future: fetchPresets,
+        builder: (context, snapshot) {
+          if (snapshot.hasData) {
+            final presets = snapshot.data;
+            if (presets!.isEmpty) return Text('No presets available!');
+            return Neumorphic(
+              style: NeumorphicStyle(
+                  shape: NeumorphicShape.convex,
+                  boxShape: NeumorphicBoxShape.roundRect(BorderRadius.circular(12)),
+                  depth: 4,
+                  lightSource: LightSource.bottom,
+                  color: Color.fromARGB(255, 232, 232, 232)
               ),
-              value: _selectedValue,
-              onChanged: widget.enabled!
-                  ? (String? value) {
-                      Equalizer.setPreset(value);
-                      setState(() {
-                        _selectedValue = value!;
-                      });
-                    }
-                  : null,
-              items: presets.map((String value) {
-                return DropdownMenuItem<String>(
-                  value: value,
-                  child: Text(value),
-                );
-              }).toList(),
-            ),
-          );
-        } else if (snapshot.hasError)
-          return Text(snapshot.error.toString());
-        else
-          return CircularProgressIndicator();
-      },
+              child: DropdownButtonFormField(
+                decoration: InputDecoration(
+                //  labelText: 'Available Presets',
+                  hintText: "Available Presets",
+                  hintStyle: TextStyle(color: Colors.black,fontSize: 15),
+                  labelStyle: TextStyle(color: Colors.white),
+                  border: OutlineInputBorder(),
+                ),
+                value: _selectedValue,
+                onChanged: widget.enabled!
+                    ? (String? value) {
+                        Equalizer.setPreset(value);
+                        setState(() {
+                          _selectedValue = value!;
+                        });
+                      }
+                    : null,
+                items: presets.map((String value) {
+                  return DropdownMenuItem<String>(
+                    value: value,
+                    child: Text(value),
+                  );
+                }).toList(),
+              ),
+            );
+          } else if (snapshot.hasError)
+            return Text(snapshot.error.toString());
+          else
+            return CircularProgressIndicator();
+        },
+      ),
     );
   }
 }
